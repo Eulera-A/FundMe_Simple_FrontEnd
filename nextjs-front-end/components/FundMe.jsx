@@ -5,7 +5,6 @@ import { abi, contractAddress } from "../constants/constants_Sepolia.js"
 import { useMoralis,useWeb3Contract } from "react-moralis"
 import { useNotification } from "web3uikit"
 import {ButtonColored} from "web3uikit"
-import bellIcon from "../img/bell.png" // local image
 
 export default function FundMe() {
       const [ethAmount, setEthAmount] = useState("")
@@ -77,22 +76,23 @@ export default function FundMe() {
               })
           })
       }
-    //   async function updateUIValues() {
-    //     // Another way we could make a contract call:
-    //     // const options = { abi, contractAddress: raffleAddress }
-    //     // const fee = await Moralis.executeFunction({
-    //     //     functionName: "getEntranceFee",
-    //     //     ...options,
-    //     // })
-    //     const fundMeBalanceFromCall = (await getBalance()).toString()
-    //     setContractBalance(fundMeBalanceFromCall)
-    // }
+      async function updateUIValues() {
+        // Another way we could make a contract call:
+        // const options = { abi, contractAddress: raffleAddress }
+        // const fee = await Moralis.executeFunction({
+        //     functionName: "getEntranceFee",
+        //     ...options,
+        // })
+        await getBalance()
+        //setContractBalance(fundMeBalanceFromCall)
+    }
 
-    // useEffect(() => {
-    //     if (isWeb3Enabled) {
-    //         updateUIValues()
-    //     }
-    // }, [isWeb3Enabled])
+    useEffect(() => {
+        if (isWeb3Enabled) {
+            updateUIValues()
+        }
+    }, [isWeb3Enabled])
+
    // functions showing notifications on funding transactions
       const handleNewNotification = () => {
         dispatch({
@@ -100,7 +100,7 @@ export default function FundMe() {
             message: "Transaction Complete!",
             title: "Transaction Notification",
             position: "topR",
-            icon: <img src={bellIcon} alt="Bell Icon" style={{ width: "20px", height: "20px" }} />,
+            icon: <img src= "/bell.png" alt="Bell Icon" style={{ width: "20px", height: "20px" }} />,
         })
     }
     const handleSuccess = async (tx) => {
@@ -136,11 +136,12 @@ export default function FundMe() {
               <button onClick={withdraw} className="bg-red-500 text-white px-4 py-2 rounded mr-2">
                   Withdraw
               </button>
-              <button onClick={getBalance} className="bg-blue-500 text-white px-4 py-2 rounded">
+              {/* <button onClick={getBalance} className="bg-blue-500 text-white px-4 py-2 rounded">
                   Get Balance
-              </button>
-  
-              {contractBalance && <p className="mt-4">Contract Balance: {contractBalance} ETH</p>}
+              </button> */}
+
+              {contractBalance && <p className="mt-4"> Current FundMe Balance: {contractBalance} ETH</p>}
+            
           </div>
       )
   }
