@@ -47,19 +47,20 @@ export default function PriceFeedCheck({ priceFeedAddress }) {
   
       return (
           <div className="p-5">
-              <h2 className="text-2xl font-semibold mb-4"> Eth to USD Converter Based on PriceFeed: {priceFeedAddress}</h2>
+            <nav className="p-5 border-b-2 flex flex-row"></nav>
+              <h3 className="text-xl font-semibold mb-4"> Eth to USD Converter Based on PriceFeed: {priceFeedAddress}</h3>
   
               <input
                   placeholder="Amount in ETH to Convert"
                   value={ETH2Convert}
                   onChange={(e) => setETH2Convert(e.target.value)}
-                  className="border px-4 py-2 rounded mr-2"
+                  className="border px-8 py-2 rounded mr-4"
               />
               <button
-               onClick={getConvertedUSD} className="bg-green-500 text-white px-4 py-2 rounded mr-2">
+               onClick={getConvertedUSD} className="bg-pink-300 text-white px-4 py-2 rounded mr-2">
                   Convert to USD
               </button>
-              
+
               {usdValue !== null && <p>USD Value: ${usdValue}</p>}
               {latestRoundData_error && <p>Error fetching price: {latestRoundData_error.message}</p>}
               

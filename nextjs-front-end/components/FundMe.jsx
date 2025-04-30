@@ -186,7 +186,10 @@ export default function FundMe() {
 
               {contractBalance && <p className="mt-4"> Current FundMe Balance: {contractBalance} ETH</p>}
             {priceFeedAddress && (
+                <div className="fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50">
                 <PriceFeedCheck priceFeedAddress={priceFeedAddress} />
+            </div>
+                //<PriceFeedCheck priceFeedAddress={priceFeedAddress} />
             )}
           </div>
           
