@@ -5,7 +5,7 @@ import { abi, contractAddress } from "../constants/constants_Sepolia.js"
 import { useMoralis,useWeb3Contract } from "react-moralis"
 import { useNotification } from "web3uikit"
 import {ButtonColored} from "web3uikit"
-
+// youtube: 18:04:25 tailwindcss
 export default function FundMe() {
       const [ethAmount, setEthAmount] = useState("")
       const [contractBalance, setContractBalance] = useState("")
@@ -50,17 +50,31 @@ export default function FundMe() {
     //           console.error(e)
     //       }
     //   }
+
+    const {
+        runContractFunction: withdraw,
+        data: withdrawTxResponse,
+        isLoading_withdraw,
+        isFetching_withdraw,
+    } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "withdraw",
+        //msgValue: {},
+        params: {},
+    })
+
   
-      async function withdraw() {
-          const { signer, provider } = await getProviderAndSigner()
-          const fundMeContract = new ethers.Contract(contractAddress, abi, signer)
-          try {
-              const txResponse = await fundMeContract.withdraw()
-              await listenForTransactionMine(txResponse, provider)
-          } catch (e) {
-              console.error(e)
-          }
-      }
+    //   async function withdraw() {
+    //       const { signer, provider } = await getProviderAndSigner()
+    //       const fundMeContract = new ethers.Contract(contractAddress, abi, signer)
+    //       try {
+    //           const txResponse = await fundMeContract.withdraw()
+    //           await listenForTransactionMine(txResponse, provider)
+    //       } catch (e) {
+    //           console.error(e)
+    //       }
+    //   }
   
       async function getBalance() {
           const { provider } = await getProviderAndSigner()
@@ -106,7 +120,7 @@ export default function FundMe() {
     const handleSuccess = async (tx) => {
         try {
             await tx.wait(1)
-            //updateUIValues()
+            updateUIValues()
             handleNewNotification(tx)
         } catch (error) {
             console.log(error)
@@ -115,7 +129,7 @@ export default function FundMe() {
   
       return (
           <div className="p-5">
-              <h2 className="text-2xl font-semibold mb-4">FundMe Contract</h2>
+              <h2 className="text-2xl font-semibold mb-4">FundMe Contract : {contractAddress}</h2>
   
               <input
                   placeholder="Amount in ETH"
@@ -133,12 +147,20 @@ export default function FundMe() {
                 })} className="bg-green-500 text-white px-4 py-2 rounded mr-2">
                   Fund
               </button>
-              <button onClick={withdraw} className="bg-red-500 text-white px-4 py-2 rounded mr-2">
+              <button onClick={async () =>
+                await withdraw({
+                    // onComplete:
+                    // onError:
+                    onSuccess: handleSuccess,
+                    onError: (error) => console.log(error),
+                })
+
+              } className="bg-red-500 text-white px-4 py-2 rounded mr-2">
                   Withdraw
               </button>
-              {/* <button onClick={getBalance} className="bg-blue-500 text-white px-4 py-2 rounded">
+              <button onClick={getBalance} className="bg-blue-500 text-white px-4 py-2 rounded">
                   Get Balance
-              </button> */}
+              </button>
 
               {contractBalance && <p className="mt-4"> Current FundMe Balance: {contractBalance} ETH</p>}
             

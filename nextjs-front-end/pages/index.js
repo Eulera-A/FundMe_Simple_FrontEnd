@@ -18,8 +18,8 @@ export default function Home() {
                 <meta name="description" content="Eulera's Simple Fund Me app on Sepolia" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            Hello! & Welcome to This Demo - FundMe Dapp on Sepolia!
             <Header />
+            Hello! & Welcome to This Demo - FundMe Dapp on Sepolia!
             {isWeb3Enabled ? (
                 <div>
                     {supportedChains.includes(parseInt(chainId).toString()) ? (
