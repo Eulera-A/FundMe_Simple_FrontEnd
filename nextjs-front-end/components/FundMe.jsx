@@ -9,6 +9,7 @@ import {ButtonColored} from "web3uikit"
 export default function FundMe() {
       const [ethAmount, setEthAmount] = useState("")
       const [contractBalance, setContractBalance] = useState("")
+      const [priceFeedAddress, setPriceFeedAddress] = useState(null)
       const dispatch = useNotification()
       const [errorMessage, setErrorMessage] = useState(null);
       const { Moralis, isWeb3Enabled, chainId: chainIdHex } = useMoralis()
@@ -63,6 +64,25 @@ export default function FundMe() {
         //msgValue: {},
         params: {},
     })
+
+    const {
+        runContractFunction: getPriceFeed,
+    } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getPriceFeed",
+        //msgValue: {},
+        params: {},
+    })
+    
+    useEffect(() => {
+        async function fetchPriceFeed() {
+            const result = await getPriceFeed()
+            setPriceFeedAddress(result)
+        }
+
+        fetchPriceFeed()
+    }, [])
 
   
     //   async function withdraw() {

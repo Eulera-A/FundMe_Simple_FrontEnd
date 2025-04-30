@@ -4,6 +4,7 @@ import styles from "../styles/Home.module.css"
 import Header from "../components/Header"
 import FundMe from "../components/FundMe"
 import { useMoralis } from "react-moralis"
+import PriceFeedCheck from "../components/PriceFeedCheck"
 
 ///only work on these chains
 const supportedChains = ["31337", "11155111"]
