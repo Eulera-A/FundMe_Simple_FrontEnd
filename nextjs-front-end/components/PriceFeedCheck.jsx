@@ -47,7 +47,6 @@ export default function PriceFeedCheck({ priceFeedAddress }) {
   
       return (
           <div className="p-5">
-            <nav className="p-5 border-b-2 flex flex-row"></nav>
               <h3 className="text-xl font-semibold mb-4"> Eth to USD Converter Based on PriceFeed: {priceFeedAddress}</h3>
   
               <input
