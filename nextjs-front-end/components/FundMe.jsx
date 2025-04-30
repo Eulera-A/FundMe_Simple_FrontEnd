@@ -5,6 +5,8 @@ import { abi, contractAddress } from "../constants/constants_Sepolia.js"
 import { useMoralis,useWeb3Contract } from "react-moralis"
 import { useNotification } from "web3uikit"
 import {ButtonColored} from "web3uikit"
+import PriceFeedCheck from "./PriceFeedCheck"
+
 // youtube: 18:04:25 tailwindcss
 export default function FundMe() {
       const [ethAmount, setEthAmount] = useState("")
@@ -74,7 +76,7 @@ export default function FundMe() {
         //msgValue: {},
         params: {},
     })
-    
+
     useEffect(() => {
         async function fetchPriceFeed() {
             const result = await getPriceFeed()
@@ -183,7 +185,10 @@ export default function FundMe() {
               </button>
 
               {contractBalance && <p className="mt-4"> Current FundMe Balance: {contractBalance} ETH</p>}
-            
+            {priceFeedAddress && (
+                <PriceFeedCheck priceFeedAddress={priceFeedAddress} />
+            )}
           </div>
+          
       )
   }

@@ -34,6 +34,7 @@ export default function Home() {
             ) : (
                 <div>Please connect to a Wallet</div>
             )}
+            <PriceFeedCheck />
         </div>
         // 17:00:09
     )
