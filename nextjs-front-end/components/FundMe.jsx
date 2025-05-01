@@ -1,10 +1,15 @@
 "use client"
 import { useEffect,useState } from "react"
 import { ethers } from "ethers"
-import { abi, contractAddress } from "../constants/constants_Sepolia.js" 
+import { abi } from "../constants/constants_Sepolia.js" 
+import {contractAddresses_js} from "../constants/contractAddresses.js"
+import contractAddresses from "../constants/contractAddresses.json"
+
 import { useMoralis,useWeb3Contract } from "react-moralis"
 import { useNotification } from "web3uikit"
 import {ButtonColored} from "web3uikit"
+// import { toast, ToastContainer } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
 import PriceFeedCheck from "./PriceFeedCheck"
 
 // youtube: 18:04:25 tailwindcss
@@ -12,9 +17,14 @@ export default function FundMe() {
       const [ethAmount, setEthAmount] = useState("")
       const [contractBalance, setContractBalance] = useState("")
       const [priceFeedAddress, setPriceFeedAddress] = useState(null)
+
       const dispatch = useNotification()
       const [errorMessage, setErrorMessage] = useState(null);
       const { Moralis, isWeb3Enabled, chainId: chainIdHex } = useMoralis()
+
+      const chainId = parseInt(chainIdHex)
+      console.log(`ChainId is ${chainId}`)
+      const contractAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null
 
       async function getProviderAndSigner() {
           if (typeof window.ethereum !== "undefined") {
@@ -148,6 +158,20 @@ export default function FundMe() {
             console.log(error)
         }
     }
+
+
+    
+    const handleWithdrawFailure = (error) => {
+        if (error.message.includes('FundMe__NotOwner')) {
+            console.log('You must be the owner to withdraw funds!')
+            //toast.error('You must be the owner to withdraw funds!');
+        } else {
+            console.log("You must be the owner to withdraw funds!")
+            //toast.error('An error occurred during withdrawal. Please try again.');
+          }
+      };
+
+   
   
       return (
           <div className="p-5">
@@ -174,7 +198,7 @@ export default function FundMe() {
                     // onComplete:
                     // onError:
                     onSuccess: handleSuccess,
-                    onError: (error) => console.log(error),
+                    onError: handleWithdrawFailure, //(error) => console.log(error),
                 })
 
               } className="bg-red-500 text-white px-4 py-2 rounded mr-2">

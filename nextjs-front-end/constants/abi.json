@@ -1,0 +1,13 @@
+[
+  "constructor(address priceFeed)",
+  "error FundMe__NotOwner()",
+  "function MINIMUM_USD() view returns (uint256)",
+  "function fund() payable",
+  "function getAddressToAmountFunded(address fundingAddress) view returns (uint256)",
+  "function getBalance() view returns (uint256)",
+  "function getFunder(uint256 index) view returns (address)",
+  "function getOwner() view returns (address)",
+  "function getPriceFeed() view returns (address)",
+  "function getVersion() view returns (uint256)",
+  "function withdraw()"
+]
