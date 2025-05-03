@@ -18,7 +18,8 @@ export default function FundMe() {
       const [contractBalance, setContractBalance] = useState("")
       const [priceFeedAddress, setPriceFeedAddress] = useState(null)
       const [ContractMinFundAmount,setContractMinFundAmount] = useState("")
-      
+      //const [walletBalance, setWalletBalance] = useState("")
+
       const dispatch = useNotification()
       const [errorMessage, setErrorMessage] = useState(null);
       const { Moralis, isWeb3Enabled, chainId: chainIdHex } = useMoralis()
@@ -136,7 +137,33 @@ export default function FundMe() {
         }
     }, [contractAddress])
 
+    // const fetchWalletBalance = async () => {
+    //     try {
+    //         if (window.ethereum) {
+    //             const provider = new ethers.providers.Web3Provider(window.ethereum)
+    //             const signer = provider.getSigner()
+    //             const walletAddress = await signer.getAddress()
+    //             const rawWalletBalance = await provider.getBalance(walletAddress)
+    //             setWalletBalance(ethers.utils.formatEther(rawWalletBalance))
+    //         }
+    //     } catch (error) {
+    //         console.error("Failed to fetch wallet balance:", error)
+    //     }
+
+        
+    // }
     
+        // // Fetch balance when component mounts
+        // useEffect(() => {
+        //     fetchWalletBalance()
+        //     window.ethereum?.on("accountsChanged", fetchWalletBalance)
+        //     window.ethereum?.on("chainChanged", fetchWalletBalance)
+    
+        //     return () => {
+        //         window.ethereum?.removeListener("accountsChanged", fetchWalletBalance)
+        //         window.ethereum?.removeListener("chainChanged", fetchWalletBalance)
+        //     }
+        // }, [])
 
   
       function listenForTransactionMine(transactionResponse, provider) {
@@ -154,6 +181,7 @@ export default function FundMe() {
         //     functionName: "getEntranceFee",
         //     ...options,
         // })
+        //fetchWalletBalance()
         await getBalance()
         //setContractBalance(fundMeBalanceFromCall)
     }
@@ -268,15 +296,15 @@ export default function FundMe() {
 
    
 
-    const handleNotOwnerNotification = () => {
-        dispatch({
-            type: "warning",
-            message: "You must be the contract owner to withdraw funds!",
-            title: "Unauthorized Withdraw",
-            position: "topR",
-            icon: <img src= "/warning.png" alt="Bell Icon" style={{ width: "20px", height: "20px" }} />,
-        })
-    }
+    // const handleNotOwnerNotification = () => {
+    //     dispatch({
+    //         type: "warning",
+    //         message: "You must be the contract owner to withdraw funds!",
+    //         title: "Unauthorized Withdraw",
+    //         position: "topR",
+    //         icon: <img src= "/warning.png" alt="Bell Icon" style={{ width: "20px", height: "20px" }} />,
+    //     })
+    // }
     
     const handleWithdrawFailure = (error) => {
         if (error.message.includes('FundMe__NotOwner')) {
