@@ -6,26 +6,26 @@ export default function Header() {
     const [walletBalance, setWalletBalance] = useState("0")
 
     useEffect(() => {
-        async function updateBalance() {
+        async function updateWalletBalance() {
             if (typeof window.ethereum !== "undefined") {
                 const provider = new ethers.providers.Web3Provider(window.ethereum)
                 const signer = provider.getSigner()
                 try {
-                    const balance = await provider.getBalance(await signer.getAddress())
-                    setWalletBalance(ethers.utils.formatEther(balance))
+                    const walletBalance = await provider.getBalance(await signer.getAddress())
+                    setWalletBalance(ethers.utils.formatEther(walletBalance))
                 } catch (err) {
                     console.error("Error fetching balance:", err)
                 }
             }
         }
 
-        updateBalance()
+        updateWalletBalance()
         // Optional: auto-update balance on new block
         const provider = new ethers.providers.Web3Provider(window.ethereum)
-        provider.on("block", updateBalance)
+        provider.on("block", updateWalletBalance)
 
         return () => {
-            provider.off("block", updateBalance)
+            provider.off("block", updateWalletBalance)
         }
     }, [])
 
