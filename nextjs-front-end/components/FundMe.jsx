@@ -125,7 +125,7 @@ export default function FundMe() {
     
             const minimumUsd = await fundMeContract.MINIMUM_USD()
             setContractMinFundAmount(ethers.utils.formatEther(minimumUsd))
-            console.log(`min funding amount is $ ${ContractMinFundAmount} USD`)
+           // console.log(`min funding amount is $ ${ContractMinFundAmount.toString()} USD`)
         } catch (error) {
             console.error("Failed to fetch MINIMUM_USD:", error)
         }

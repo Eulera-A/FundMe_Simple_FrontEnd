@@ -14,18 +14,25 @@ const supportedChains = ["31337", "11155111"]
 export default function Home() {
     const { isWeb3Enabled, chainId } = useMoralis()
     const [networkName, setNetworkName] = useState(null)
+    const [hasWallet, setHasWallet] = useState(true)
 
     useEffect(() => {
         async function fetchNetworkName() {
-            if (typeof window.ethereum !== "undefined") {
+            if (typeof window === "undefined") return // guard for SSR
+            if (typeof window.ethereum === "undefined") {
+                setHasWallet(false)
+                return
+            }
+
+            try {
                 const provider = new ethers.providers.Web3Provider(window.ethereum)
-                const network_chainId = await (await provider.getNetwork()).chainId
+                const network = await provider.getNetwork()
                 const connectedNetworkName =
-                    networkNames[network_chainId.toString()] || "Unknown Network"
-
-                console.log(`Connected to: ${connectedNetworkName}`)
-
+                    networkNames[network.chainId.toString()] || "Unknown Network"
                 setNetworkName(connectedNetworkName)
+            } catch (error) {
+                console.error("Error fetching network:", error)
+                setHasWallet(false)
             }
         }
 
@@ -43,7 +50,14 @@ export default function Home() {
             </Head>
             <Header />
             Hello! & Welcome to This Demo - FundMe Dapp!
-            {isWeb3Enabled ? (
+            {!hasWallet ? (
+                <div>
+                    🚫 No Web3 wallet detected. Please install MetaMask or another wallet
+                    extension.
+                </div>
+            ) : !isWeb3Enabled ? (
+                <div>Please connect to a Wallet</div>
+            ) : (
                 <div>
                     <p>
                         Your Wallet is connected to: <strong>{networkName || "Loading..."}</strong>
@@ -53,13 +67,13 @@ export default function Home() {
                             <FundMe className="p-8" />
                         </div>
                     ) : (
-                        <div>{`Please switch to a supported chainId. The supported Chain Ids are: ${supportedChains}`}</div>
+                        <div>
+                            Please switch to a supported chainId. Supported Chain Ids are:{" "}
+                            {supportedChains.join(", ")}
+                        </div>
                     )}
                 </div>
-            ) : (
-                <div>Please connect to a Wallet</div>
             )}
         </div>
-        // 17:00:09
-    )
+    ) // 17:00:09
 }
