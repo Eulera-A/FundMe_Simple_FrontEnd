@@ -1,55 +1,52 @@
 import Head from "next/head"
 import styles from "../styles/Home.module.css"
-//import ManualHeader from "../components/ManualHeader"
 import Header from "../components/Header"
 import FundMe from "../components/FundMe"
 import { useMoralis } from "react-moralis"
-import PriceFeedCheck from "../components/PriceFeedCheck"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
-///only work on these chains
 import networkNames from "../constants/networkNames.json"
+
 const supportedChains = ["31337", "11155111"]
 
 export default function Home() {
     const { isWeb3Enabled, chainId } = useMoralis()
     const [networkName, setNetworkName] = useState(null)
-    const [hasWallet, setHasWallet] = useState(true)
+    const [hasWallet, setHasWallet] = useState(false) // default false
 
     useEffect(() => {
-        async function fetchNetworkName() {
-            if (typeof window === "undefined") return // guard for SSR
-            if (typeof window.ethereum === "undefined") {
-                setHasWallet(false)
-                return
-            }
+        if (typeof window === "undefined") return // SSR guard
 
-            try {
-                const provider = new ethers.providers.Web3Provider(window.ethereum)
-                const network = await provider.getNetwork()
-                const connectedNetworkName =
-                    networkNames[network.chainId.toString()] || "Unknown Network"
-                setNetworkName(connectedNetworkName)
-            } catch (error) {
-                console.error("Error fetching network:", error)
-                setHasWallet(false)
-            }
+        if (typeof window.ethereum !== "undefined") {
+            setHasWallet(true)
+            const provider = new ethers.providers.Web3Provider(window.ethereum)
+            provider
+                .getNetwork()
+                .then((network) => {
+                    const connectedNetworkName =
+                        networkNames[network.chainId.toString()] || "Unknown Network"
+                    setNetworkName(connectedNetworkName)
+                })
+                .catch((error) => {
+                    console.error("Error fetching network:", error)
+                    setHasWallet(false)
+                })
+        } else {
+            setHasWallet(false)
         }
-
-        if (isWeb3Enabled) {
-            fetchNetworkName()
-        }
-    }, [isWeb3Enabled, chainId]) // re-run when user switches network
+    }, [isWeb3Enabled, chainId])
 
     return (
         <div className={styles.container}>
             <Head>
-                <title>Simple Smart Contract: Fund Me </title>
+                <title>Simple Smart Contract: Fund Me</title>
                 <meta name="description" content="Eulera's Simple Fund Me DApp" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            <Header />
-            Hello! & Welcome to This Demo - FundMe Dapp!
+
+            {hasWallet && <Header />}
+            <h1>Hello! & Welcome to This Demo - FundMe Dapp!</h1>
+
             {!hasWallet ? (
                 <div>
                     🚫 No Web3 wallet detected. Please install MetaMask or another wallet
@@ -75,5 +72,5 @@ export default function Home() {
                 </div>
             )}
         </div>
-    ) // 17:00:09
+    )
 }
