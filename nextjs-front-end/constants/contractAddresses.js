@@ -1,4 +1,0 @@
-export const contractAddresses = {
-    11155111: ["0x41307b8e93488ee3E12f20D86db93C014A758119"],
-    31337: ["0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"],
-}

@@ -2,23 +2,24 @@
 import { useEffect,useState } from "react"
 import { ethers } from "ethers"
 import { abi } from "../constants/constants_Sepolia.js" 
-import {contractAddresses_js} from "../constants/contractAddresses.js"
 import contractAddresses from "../constants/contractAddresses.json"
 
 import { useMoralis,useWeb3Contract } from "react-moralis"
 import { useNotification } from "web3uikit"
-import {ButtonColored} from "web3uikit"
 // import { toast, ToastContainer } from 'react-toastify';
 // import 'react-toastify/dist/ReactToastify.css';
 import PriceFeedCheck from "./PriceFeedCheck"
 
-// youtube: 18:04:25 tailwindcss
+
 export default function FundMe() {
       const [ethAmount, setEthAmount] = useState("")
       const [contractBalance, setContractBalance] = useState("")
       const [priceFeedAddress, setPriceFeedAddress] = useState(null)
       const [ContractMinFundAmount,setContractMinFundAmount] = useState("")
       //const [walletBalance, setWalletBalance] = useState("")
+      const [deadlineDuration, setDeadlineDuration] = useState("")
+      const [timeLeft, setTimeLeft] = useState(null)
+
 
       const dispatch = useNotification()
       const [errorMessage, setErrorMessage] = useState(null);
@@ -67,14 +68,14 @@ export default function FundMe() {
     //   }
 
     const {
-        runContractFunction: withdraw,
+        runContractFunction: withdrawFunds,
         data: withdrawTxResponse,
         isLoading_withdraw,
         isFetching_withdraw,
     } = useWeb3Contract({
         abi: abi,
         contractAddress: contractAddress,
-        functionName: "withdraw",
+        functionName: "withdrawFunds",
         //msgValue: {},
         params: {},
     })
@@ -165,15 +166,15 @@ export default function FundMe() {
         //     }
         // }, [])
 
-  
-      function listenForTransactionMine(transactionResponse, provider) {
-          console.log(`Mining transaction with hash: ${transactionResponse.hash}`)
-          return new Promise((resolve, reject) => {
-              provider.once(transactionResponse.hash, (txReceipt) => {
-                  txReceipt.status === 1 ? resolve(txReceipt) : reject("Failed")
-              })
-          })
-      }
+    // this is the manual way of coding to listen fro txs:
+    //   function listenForTransactionMine(transactionResponse, provider) {
+    //       console.log(`Mining transaction with hash: ${transactionResponse.hash}`)
+    //       return new Promise((resolve, reject) => {
+    //           provider.once(transactionResponse.hash, (txReceipt) => {
+    //               txReceipt.status === 1 ? resolve(txReceipt) : reject("Failed")
+    //           })
+    //       })
+    //   }
       async function updateUIValues() {
         // Another way we could make a contract call:
         // const options = { abi, contractAddress: raffleAddress }
@@ -285,7 +286,7 @@ export default function FundMe() {
         console.log("Revert reason:", reason);
     
         if (reason?.includes("FundMe__NotOwner")) {
-            handleFailureNotification("Only the contract owner can withdraw funds.");
+            handleFailureNotification("Only Owner Accessible Controls");
         } else if (reason?.includes("You need to spend more ETH")) {
             handleFailureNotification("You need to spend more ETH!");
         } else {
@@ -317,6 +318,81 @@ export default function FundMe() {
           }
       };
 
+
+      // added in new setdeadline UI:
+      const {
+        runContractFunction: resetFundingDeadline,
+        isLoading: isLoading_resetDeadline,
+    } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "resetFundingDeadline",
+        params: {
+            durationInDays: deadlineDuration || "0", // fallback to "0" if empty
+        },
+    })
+
+    const handleResetDeadline = async () => {
+        try {
+            await resetFundingDeadline({
+                onSuccess: async (tx) => {
+                    await tx.wait(1)
+                    handleNewNotification(tx)
+                },
+                onError: (error) => {
+                    const reason = extractRevertReason(error)
+                    console.error("Reset Deadline Failed:", reason || error)
+                    handleFailure(error) // optional UI feedback
+                },
+            })
+        } catch (err) {
+            const reason = extractRevertReason(err)
+    console.error("Reset Deadline Failed:", reason || err)
+    handleFailure(err)  // optional if you want UI feedback
+            //console.error("Reset Deadline Failed:", err)
+        }
+    }
+
+    //add in ui for viewing time left to closing 
+    const {
+        runContractFunction: getTimeLeft,
+        isLoading: isLoading_getTimeLeft,
+    } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "timeLeft",
+        params: {},
+        
+    })
+    function formatTime(seconds) {
+        const d = Math.floor(seconds / (3600 * 24))
+        const h = Math.floor((seconds % (3600 * 24)) / 3600)
+        const m = Math.floor((seconds % 3600) / 60)
+        const s = seconds % 60
+        return `${d}d ${h}h ${m}m ${s}s`
+    }
+    useEffect(() => {
+        if (!contractAddress || !isWeb3Enabled) return
+    
+        async function updateCountdown() {
+            try {
+                const result = await getTimeLeft()
+                const seconds = result?.toNumber?.() || 0
+                setTimeLeft(seconds)
+            } catch (error) {
+                console.error("Failed to fetch time left:", error)
+            }
+        }
+    
+        updateCountdown()
+    
+        const interval = setInterval(updateCountdown, 1000)
+    
+        return () => clearInterval(interval)
+    }, [contractAddress, isWeb3Enabled])
+    
+
+
    
   
       return (
@@ -340,7 +416,7 @@ export default function FundMe() {
                   Fund
               </button>
               <button onClick={async () =>
-                await withdraw({
+                await withdrawFunds({
                     // onComplete:
                     // onError:
                     onSuccess: handleSuccess,
@@ -348,11 +424,12 @@ export default function FundMe() {
                 })
 
               } className="bg-red-500 text-white px-4 py-2 rounded mr-2">
-                  Withdraw
+                  Withdraw Your Funds
               </button>
               <button onClick={getBalance} className="bg-blue-500 text-white px-4 py-2 rounded">
                   Get Balance
               </button>
+              
 
               {contractBalance && <p className="mt-4"> Current FundMe Balance: {contractBalance} ETH</p>}
               
@@ -364,6 +441,27 @@ export default function FundMe() {
                 <PriceFeedCheck priceFeedAddress={priceFeedAddress} />
             </div>
             )}
+
+<input
+        placeholder="Extend deadline (in days)"
+        value={deadlineDuration}
+        onChange={(e) => setDeadlineDuration(e.target.value)}
+        className="border px-4 py-2 rounded mr-2"
+        type="number"
+        min="1"
+    />
+    <button
+        onClick={handleResetDeadline}
+        className="bg-yellow-500 text-white px-4 py-2 rounded"
+        disabled={!deadlineDuration || isLoading_resetDeadline}
+    >
+        Reset Deadline
+    </button>
+    {timeLeft !== null && (
+    <p className="mt-4 text-xl text-blue-700 font-semibold">
+        ⏳ Time until deadline: {timeLeft > 0 ? formatTime(timeLeft) : "Funding Closed"}
+    </p>
+)}
           </div>
           
       )
