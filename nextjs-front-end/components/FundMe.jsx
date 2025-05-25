@@ -227,12 +227,37 @@ export default function FundMe() {
         return "Insufficient Wallet Balance"
     }
     
-        const hexData = error?.data?.data?.data || error?.data?.data || error?.data
+          // Attempt to find revert data in multiple possible locations
+  const possibleHexDataPaths = [
+    error?.data?.data?.data,
+    error?.data?.data,
+    error?.data,
+    error?.error?.data,
+    error?.error,
+  ];
+
+  let hexData = null;
+  for (const candidate of possibleHexDataPaths) {
+    if (typeof candidate === "string" && candidate.startsWith("0x")) {
+      hexData = candidate;
+      break;
+    }
+  }
+
+  if (!hexData) {
+    // No hex revert data found
+    // Fallback to raw message if it includes "execution reverted"
+    if (errorMsg.toLowerCase().includes("execution reverted:")) {
+      return errorMsg.split("execution reverted:")[1].trim();
+    }
+    console.warn("No hex revert data found in error:", error);
+    return null;
+  }
     
-        if (!hexData || typeof hexData !== "string") {
-            console.warn("No hex data found in error:", error)
-            return null
-        }
+        // if (!hexData || typeof hexData !== "string") {
+        //     console.warn("No hex data found in error:", error)
+        //     return null
+        // }
     
         try { // this detects the errors defined in Solidity contracts: such as the FundMe__NotOwner error type that shows up in the ABI!
 
@@ -306,6 +331,30 @@ export default function FundMe() {
     //         icon: <img src= "/warning.png" alt="Bell Icon" style={{ width: "20px", height: "20px" }} />,
     //     })
     // }
+
+    const handleWithdrawFunds = async () => {
+        try {
+            // 1. Simulate (static call) using Moralis.executeFunction
+        await Moralis.executeFunction({
+            abi: abi,
+            contractAddress: contractAddress,
+            functionName: "withdrawFunds",
+            params: {},
+        })
+    
+            // 2. Send the actual transaction
+            await withdrawFunds({
+                onSuccess: handleSuccess,
+                onError: handleFailure,
+            })
+        } catch (error) {
+            // 3. Catch revert and decode it
+        //    const reason = extractRevertReason(error)
+        //     console.error("Withdraw simulation failed:", reason || error)
+            handleFailure(error)
+        }
+    }
+    
     
     const handleWithdrawFailure = (error) => {
         if (error.message.includes('FundMe__NotOwner')) {
@@ -415,13 +464,15 @@ export default function FundMe() {
                 })} className="bg-green-500 text-white px-4 py-2 rounded mr-2">
                   Fund
               </button>
-              <button onClick={async () =>
-                await withdrawFunds({
-                    // onComplete:
-                    // onError:
-                    onSuccess: handleSuccess,
-                    onError: handleFailure,//handleWithdrawFailure, //(error) => console.log(error),
-                })
+              <button onClick={handleWithdrawFunds
+                
+                // async () =>
+                // await withdrawFunds({
+                //     // onComplete:
+                //     // onError:
+                //     onSuccess: handleSuccess,
+                //     onError: handleFailure,//handleWithdrawFailure, //(error) => console.log(error),
+                // })
 
               } className="bg-red-500 text-white px-4 py-2 rounded mr-2">
                   Withdraw Your Funds
