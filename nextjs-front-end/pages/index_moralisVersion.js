@@ -1,7 +1,8 @@
 import Head from "next/head"
 import styles from "../styles/Home.module.css"
-import Header_DualMode from "../components/Header_DualMode"
-import FundMe from "../components/FundMe_DualMode"
+import Header from "../components/Header"
+import FundMe from "../components/FundMe"
+import { useMoralis } from "react-moralis"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
 import networkNames from "../constants/networkNames.json"
@@ -10,34 +11,31 @@ import Link from "next/link"
 const supportedChains = ["31337", "11155111"]
 
 export default function Home() {
+    const { isWeb3Enabled, chainId } = useMoralis()
     const [networkName, setNetworkName] = useState(null)
-    const [hasWallet, setHasWallet] = useState(false)
-    const [isConnected, setIsConnected] = useState(false)
-    const [chainId, setChainId] = useState(null)
+    const [hasWallet, setHasWallet] = useState(false) // default false
 
     useEffect(() => {
-        if (typeof window === "undefined") return
+        if (typeof window === "undefined") return // SSR guard
 
         if (typeof window.ethereum !== "undefined") {
             setHasWallet(true)
             const provider = new ethers.providers.Web3Provider(window.ethereum)
-
-            provider.getNetwork().then((network) => {
-                setChainId(network.chainId.toString())
-                const connectedNetworkName =
-                    networkNames[network.chainId.toString()] || "Unknown Network"
-                setNetworkName(connectedNetworkName)
-            })
-
-            provider.listAccounts().then((accounts) => {
-                if (accounts.length > 0) {
-                    setIsConnected(true)
-                }
-            })
+            provider
+                .getNetwork()
+                .then((network) => {
+                    const connectedNetworkName =
+                        networkNames[network.chainId.toString()] || "Unknown Network"
+                    setNetworkName(connectedNetworkName)
+                })
+                .catch((error) => {
+                    console.error("Error fetching network:", error)
+                    setHasWallet(false)
+                })
         } else {
             setHasWallet(false)
         }
-    }, [])
+    }, [isWeb3Enabled, chainId])
 
     return (
         <div className={styles.container}>
@@ -47,34 +45,28 @@ export default function Home() {
                 <link rel="icon" href="/favicon.ico" />
             </Head>
 
-            <Header_DualMode />
-
+            {hasWallet && <Header />}
             <h1>Hello! & Welcome to This Demo - FundMe Dapp!</h1>
-
-            {/* Public page link (no wallet required) */}
-            <Link href="/PriceFeedPage">
-                <a className="text-blue-600 underline">Go to Public Page</a>
-            </Link>
 
             {!hasWallet ? (
                 <div>
-                    🚫 No Web3 wallet detected. Please install MetaMask for Web3 Interactions.
+                    🚫 No Web3 wallet detected. Please install MetaMask or another wallet
+                    extension.
                 </div>
-            ) : !isConnected ? (
+            ) : !isWeb3Enabled ? (
                 <div>Please connect to a Wallet</div>
             ) : (
                 <div>
                     <p>
                         Your Wallet is connected to: <strong>{networkName || "Loading..."}</strong>
                     </p>
-
-                    {supportedChains.includes(chainId) ? (
+                    {supportedChains.includes(parseInt(chainId).toString()) ? (
                         <div className="flex flex-row">
                             <FundMe className="p-8" />
                         </div>
                     ) : (
                         <div>
-                            Please switch to a supported chain. Supported Chain Ids are:{" "}
+                            Please switch to a supported chainId. Supported Chain Ids are:{" "}
                             {supportedChains.join(", ")}
                         </div>
                     )}
