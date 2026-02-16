@@ -2,64 +2,46 @@
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
 import { abi } from "../constants/constants_Sepolia.js"
-import contractAddresses from "../constants/contractAddresses.json"
-import PriceFeedCheck from "./PriceFeedCheck.jsx"
-
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL // Alchemy/Infura
 
 export default function FundMe() {
     const [ethAmount, setEthAmount] = useState("")
     const [contractBalance, setContractBalance] = useState("")
     const [contractAddress, setContractAddress] = useState(null)
-    const [provider, setProvider] = useState(null)
     const [signer, setSigner] = useState(null)
     const [contract, setContract] = useState(null)
     const [account, setAccount] = useState(null)
     const [timeLeft, setTimeLeft] = useState(null)
 
     const isWeb3Available =
-        typeof window !== "undefined" && typeof window.ethereum !== "undefined"
+        typeof window !== "undefined" && window.ethereum
 
     // ------------------------
-    // Initialize Providers
+    // READ MODE (API)
     // ------------------------
-    useEffect(() => {
-        async function init() {
-            let readProvider = new ethers.providers.JsonRpcProvider(RPC_URL)
-            setProvider(readProvider)
+    async function loadContractData() {
+        try {
+            const response = await fetch("/api/fundme_read")
+            const data = await response.json()
 
-            if (isWeb3Available) {
-                const web3Provider = new ethers.providers.Web3Provider(window.ethereum)
-                const accounts = await web3Provider.send("eth_accounts", [])
+            if (!response.ok) throw new Error(data.error)
 
-                if (accounts.length > 0) {
-                    const walletSigner = web3Provider.getSigner()
-                    setSigner(walletSigner)
-                    setAccount(accounts[0])
-                    readProvider = web3Provider
-                }
-            }
-
-            const network = await readProvider.getNetwork()
-            const address =
-                contractAddresses[network.chainId]?.[0] || null
-
-            if (address) {
-                setContractAddress(address)
-                const fundMeContract = new ethers.Contract(
-                    address,
-                    abi,
-                    readProvider
-                )
-                setContract(fundMeContract)
-            }
+            setContractAddress(data.address)
+            setContractBalance(data.balance)
+            setTimeLeft(parseInt(data.timeLeft))
+        } catch (error) {
+            console.error("Read error:", error)
         }
+    }
 
-        init()
+    useEffect(() => {
+        loadContractData()
+
+        const interval = setInterval(loadContractData, 10000)
+        return () => clearInterval(interval)
     }, [])
 
     // ------------------------
-    // Connect Wallet
+    // CONNECT WALLET
     // ------------------------
     async function connectWallet() {
         if (!isWeb3Available) {
@@ -67,76 +49,64 @@ export default function FundMe() {
             return
         }
 
-        const web3Provider = new ethers.providers.Web3Provider(window.ethereum)
+        const web3Provider = new ethers.providers.Web3Provider(
+            window.ethereum,
+            "any"
+        )
+
         await web3Provider.send("eth_requestAccounts", [])
+
         const walletSigner = web3Provider.getSigner()
         const address = await walletSigner.getAddress()
 
         setSigner(walletSigner)
         setAccount(address)
 
-        const writableContract = contract.connect(walletSigner)
+        const writableContract = new ethers.Contract(
+            contractAddress,
+            abi,
+            walletSigner
+        )
+
         setContract(writableContract)
     }
 
     // ------------------------
-    // Read Functions (Works in both modes)
-    // ------------------------
-    async function getBalance() {
-        if (!contractAddress || !provider) return
-        const balance = await provider.getBalance(contractAddress)
-        setContractBalance(ethers.utils.formatEther(balance))
-    }
-
-    async function getTimeLeft() {
-        if (!contract) return
-        const seconds = await contract.timeLeft()
-        setTimeLeft(seconds.toNumber())
-    }
-
-    useEffect(() => {
-        if (!contract) return
-        getBalance()
-        getTimeLeft()
-        const interval = setInterval(getTimeLeft, 1000)
-        return () => clearInterval(interval)
-    }, [contract])
-
-    // ------------------------
-    // Write Functions (Web3 Only)
+    // WRITE FUNCTIONS
     // ------------------------
     async function fund() {
-        if (!signer) return alert("Connect wallet first")
+        if (!contract) return alert("Connect wallet first")
 
         try {
             const tx = await contract.fund({
                 value: ethers.utils.parseEther(ethAmount),
             })
             await tx.wait(1)
-            getBalance()
+            loadContractData()
         } catch (error) {
             console.error(error)
         }
     }
 
     async function withdraw() {
-        if (!signer) return alert("Connect wallet first")
+        if (!contract) return alert("Connect wallet first")
 
         try {
             const tx = await contract.withdrawFunds()
             await tx.wait(1)
-            getBalance()
+            loadContractData()
         } catch (error) {
             console.error(error)
         }
     }
 
     async function resetDeadline(days) {
-        if (!signer) return alert("Connect wallet first")
+        if (!contract) return alert("Connect wallet first")
 
         try {
             const tx = await contract.resetFundingDeadline(days)
             await tx.wait(1)
+            loadContractData()
         } catch (error) {
             console.error(error)
         }
@@ -159,7 +129,6 @@ export default function FundMe() {
                 FundMe Contract: {contractAddress || "Loading..."}
             </h2>
 
-            {/* Web3 Status */}
             {!isWeb3Available && (
                 <p className="text-blue-600">
                     🔍 Read-only mode (no wallet detected)
@@ -182,23 +151,10 @@ export default function FundMe() {
                 </p>
             )}
 
-            {/* Balance */}
             <div className="mt-4">
-                <button
-                    onClick={getBalance}
-                    className="bg-gray-600 text-white px-3 py-2 rounded"
-                >
-                    Refresh Balance
-                </button>
-
-                {contractBalance && (
-                    <p className="mt-2">
-                        Contract Balance: {contractBalance} ETH
-                    </p>
-                )}
+                <p>Contract Balance: {contractBalance || "Loading..."} ETH</p>
             </div>
 
-            {/* Fund */}
             <div className="mt-6">
                 <input
                     placeholder="Amount in ETH"
@@ -214,7 +170,6 @@ export default function FundMe() {
                 </button>
             </div>
 
-            {/* Withdraw */}
             <div className="mt-4">
                 <button
                     onClick={withdraw}
@@ -224,7 +179,6 @@ export default function FundMe() {
                 </button>
             </div>
 
-            {/* Deadline */}
             {timeLeft !== null && (
                 <p className="mt-6 text-blue-700 font-semibold">
                     ⏳ Time Left:{" "}
