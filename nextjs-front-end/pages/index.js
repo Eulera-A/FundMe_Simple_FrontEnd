@@ -17,26 +17,42 @@ export default function Home() {
 
     useEffect(() => {
         if (typeof window === "undefined") return
+        if (!window.ethereum) {
+            setHasWallet(false)
+            return
+        }
 
-        if (typeof window.ethereum !== "undefined") {
-            setHasWallet(true)
-            const provider = new ethers.providers.Web3Provider(window.ethereum)
+        setHasWallet(true)
 
-            provider.getNetwork().then((network) => {
+        const provider = new ethers.providers.Web3Provider(
+            window.ethereum,
+            "any", // 👈 IMPORTANT
+        )
+
+        async function init() {
+            try {
+                const network = await provider.getNetwork()
+
                 setChainId(network.chainId.toString())
-                const connectedNetworkName =
-                    networkNames[network.chainId.toString()] || "Unknown Network"
-                setNetworkName(connectedNetworkName)
-            })
+                setNetworkName(networkNames[network.chainId.toString()] || "Unknown Network")
 
-            provider.listAccounts().then((accounts) => {
+                const accounts = await provider.listAccounts()
                 if (accounts.length > 0) {
                     setIsConnected(true)
                 }
-            })
-        } else {
-            setHasWallet(false)
+            } catch (error) {
+                console.error("Network detection error:", error)
+            }
         }
+
+        init()
+
+        // 👇 Handle chain switching safely
+        provider.on("network", (newNetwork, oldNetwork) => {
+            if (oldNetwork) {
+                window.location.reload()
+            }
+        })
     }, [])
 
     return (
@@ -52,9 +68,37 @@ export default function Home() {
             <h1>Hello! & Welcome to This Demo - FundMe Dapp!</h1>
 
             {/* Public page link (no wallet required) */}
-            <Link href="/PriceFeedPage">
-                <a className="text-blue-600 underline">Go to Public Page</a>
-            </Link>
+            <div style={{ display: "flex", gap: "20px", marginTop: "30px" }}>
+                <Link href="/PriceFeedPage">
+                    <div
+                        style={{
+                            padding: "20px",
+                            border: "1px solid #ccc",
+                            borderRadius: "10px",
+                            cursor: "pointer",
+                            width: "250px",
+                        }}
+                    >
+                        <h3>🔗 Chainlink Price Feed</h3>
+                        <p>Read ETH/USD directly from blockchain</p>
+                    </div>
+                </Link>
+
+                <Link href="/stocks">
+                    <div
+                        style={{
+                            padding: "20px",
+                            border: "1px solid #ccc",
+                            borderRadius: "10px",
+                            cursor: "pointer",
+                            width: "250px",
+                        }}
+                    >
+                        <h3>📈 Stock Market Data</h3>
+                        <p>Live stock prices via Finnhub API</p>
+                    </div>
+                </Link>
+            </div>
 
             {!hasWallet ? (
                 <div>
